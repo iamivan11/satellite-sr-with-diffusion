@@ -1,0 +1,28 @@
+[project]
+name = "satellite-sr-with-conditional-diffusion"
+version = "0.1.0"
+description = "Satellite single-image super-resolution with conditional (SR3) and wavelet (DiWa) diffusion models."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # Core ML frameworks — kept loose so Colab/HPC CUDA builds resolve
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "numpy==1.26.4",
+    # Image processing
+    "Pillow>=9.0.0",
+    "opencv-python-headless==4.9.0.80",
+    # Metrics and evaluation
+    "torchmetrics[image]>=0.11.0",
+    "lpips>=0.1.4",
+    # Logging
+    "wandb>=0.15.0",
+    # Utilities
+    "tqdm>=4.64.0",
+    # Wavelet transforms
+    "pytorch_wavelets>=1.3.0",
+]
+
+[tool.uv]
+# Dependency-only project: manage the environment, don't build/install the repo as a package.
+package = false

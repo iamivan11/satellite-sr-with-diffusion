@@ -2,12 +2,14 @@
 
 ## Quickstart
 
-Run all commands from the `satellite_sr_with_wavelet_diffusion/` directory.
+Install dependencies with [uv](https://docs.astral.sh/uv/) from the repo root:
 
 ```bash
-cd satellite_sr_with_wavelet_diffusion
-pip install -r requirements.txt
+uv sync
 ```
+
+Then run the commands below from the `satellite_sr_with_wavelet_diffusion/` directory, with the
+environment active (`source .venv/bin/activate`) or each command prefixed with `uv run`.
 
 Pick a config from `config/<dataset>/<arch>/` and point its `datasets.train.dataroot` /
 `datasets.val.dataroot` at your data before running. Each split needs `hr/` and `lr/`
