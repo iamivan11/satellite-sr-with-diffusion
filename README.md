@@ -35,48 +35,6 @@ python inference.py -c config/sen2venus/wave/val_config_4x.json
 Training writes logs/checkpoints/samples under `experiments/<name>/`; evaluation and inference
 write images to the config's `results` path (evaluation also writes `metrics.txt`).
 
-## Commit history:
-
-*0th commit: local machine (30/06/25)*
-
-*1st commit: testing BlueBEAR (01/07/25)*
-
-*2nd commit: first three datasets for experiments uploaded to BlueBear (10/07/25)*
-
-*3rd commit: first training experiments started (14/07/25)*
-
-*4th commit: first 100k iterations with experiments & improved code (15/07/25)*
-
-*5th commit: reorganise and update docs, add LPIPS loss component (16/07/25)*
-
-*6th commit: update docs, WorldStrat filtering and processing pipeline design (25/07/25)*
-
-*7th commit: improve code, new experiments reporting (26/07/25)*
-
-*8th commit: update docs, STAGE2 reporting (27/07/25)*
-
-*9th commit: update docs, STAGE2 report finalization & conclusions (28/07/25)*
-
-*10th commit: folder restructuring (31/07/25)*
-
-*11th commit: improve code, update docs (03/08/25)* 
-
-*12th commit: improve code, update docs, changes to STAGE_.md (10/08/25)* 
-
-*13th commit: clean code, add data proc files, update docs (17/08/25)* 
-
-*14th commit: unify synth preprocessing pipeline (19/08/25)* 
-
-*15th commit: inference pipeline (22/08/25)* 
-
-*16th commit: update docs (25/08/25)* 
-
-*17th commit: update docs (26/08/25)* 
-
-*18th commit: added AG calculation, GLCM, LBP scripts (28/08/25)*
-
-*19th commit: added sample notebooks, image subtraction (31/08/25)*
-
 ## Datasets
 
 ### 1: WorldStrat
@@ -124,62 +82,71 @@ write images to the config's `results` path (evaluation also writes `metrics.txt
 - **Description**: Peak Signal-to-Noise Ratio (PSNR) measures the quality of a reconstructed image compared to its original. It is defined via the Mean Squared Error (MSE). A higher PSNR generally indicates a higher quality reconstruction.
 - **Range**: 0 to ∞ dB (typically 20-40 dB for natural images). Better when ↑.
 - **Formula**:
-   ```math
-  \text{PSNR}(I_{HR}, I_{SR}) = 10 \cdot \log_{10} \left( \frac{L^2}{\text{MSE}(I_{HR}, I_{SR})} \right)
-  ```
 
-  $I_{HR}$ - HR image  
-  $I_{SR}$ - SR image  
-  $`L`$ - maximum possible pixel value (e.g., 255 for 8-bit images)  
-  $\text{MSE}(I_{HR}, I_{SR}) = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} (I_{HR}(i,j) - I_{SR}(i,j))^2$  
-  $H, W$ - image height and width
+```math
+\text{PSNR}(I_{HR}, I_{SR}) = 10 \cdot \log_{10} \left( \frac{L^2}{\text{MSE}(I_{HR}, I_{SR})} \right)
+```
+
+$I_{HR}$ - HR image  
+$I_{SR}$ - SR image  
+$`L`$ - maximum possible pixel value (e.g., 255 for 8-bit images)  
+$\text{MSE}(I_{HR}, I_{SR}) = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} (I_{HR}(i,j) - I_{SR}(i,j))^2$  
+$H, W$ - image height and width
 
 ### 2: SSIM
 
 - **Description**: The Structural Similarity Index (SSIM) is a metric that quantifies image quality degradation based on changes in structural information. A full-reference perceptual similarity index that combines three local comparisons—*luminance*, *contrast*, and *structure*—via statistics of means, variances, and cross-covariance.
 - **Range**: -1 to 1 (typically 0.1-0.9 for degraded images, 1 = perfect similarity). Most implementations return values in [0, 1], with negatives possible in edge cases depending on data range/regularization constants. Better when ↑.
 - **Formula**:
-   ```math
-  \text{SSIM}(I_{HR}, I_{SR}) =
-  \left( \frac{2\mu_{I_{HR}} \mu_{I_{SR}} + c_1}{\mu_{I_{HR}}^2 + \mu_{I_{SR}}^2 + c_1} \right)
-  \left( \frac{2\sigma_{I_{HR}} \sigma_{I_{SR}} + c_2}{\sigma_{I_{HR}}^2 + \sigma_{I_{SR}}^2 + c_2} \right)
-  \left( \frac{\sigma_{I_{HR} I_{SR}} + c_3}{\sigma_{I_{HR}} \sigma_{I_{SR}} + c_3} \right)
-  ``` 
-  $\mu_{I_{HR}}, \mu_{I_{SR}}$ - mean brightness of each image  
-  $\sigma_{I_{HR}}, \sigma_{I_{SR}}$ - standard deviations (contrast)  
-  $\sigma_{I_{HR} I_{SR}}$ - covariance (structural similarity)  
-  $c_1, c_2, c_3$ - small constants for stability  
+
+```math
+\text{SSIM}(I_{HR}, I_{SR}) =
+\left( \frac{2\mu_{I_{HR}} \mu_{I_{SR}} + c_1}{\mu_{I_{HR}}^2 + \mu_{I_{SR}}^2 + c_1} \right)
+\left( \frac{2\sigma_{I_{HR}} \sigma_{I_{SR}} + c_2}{\sigma_{I_{HR}}^2 + \sigma_{I_{SR}}^2 + c_2} \right)
+\left( \frac{\sigma_{I_{HR} I_{SR}} + c_3}{\sigma_{I_{HR}} \sigma_{I_{SR}} + c_3} \right)
+```
+
+$\mu_{I_{HR}}, \mu_{I_{SR}}$ - mean brightness of each image  
+$\sigma_{I_{HR}}, \sigma_{I_{SR}}$ - standard deviations (contrast)  
+$\sigma_{I_{HR} I_{SR}}$ - covariance (structural similarity)  
+$c_1, c_2, c_3$ - small constants for stability  
 
 ### 3: LPIPS
 
 - **Description**: The Learned Perceptual Image Patch Similarity (LPIPS) metric computes the distance between the deep features of two images extracted from a pre-trained network (like VGG). It is designed to align better with human perception of image similarity than traditional metrics like PSNR and SSIM.
 - **Range**: 0 to 1+ (typically 0.1-0.8 for SR images, 0 = identical images). Better when ↓.
 - **Formula**:
-   ```math
-  \text{LPIPS}(I_{HR}, I_{SR}) = \sum_{l=1}^{L} w_l \cdot \| f_l(I_{HR}) - f_l(I_{SR}) \|_2^2
-  ``` 
-  $f_l(I_{HR}), f_l(I_{SR})$ - deep features at layer $l$  
-  $L$ - number of layers  
-  $w_l$ - learned weight for layer $l$  
+
+```math
+\text{LPIPS}(I_{HR}, I_{SR}) = \sum_{l=1}^{L} w_l \cdot \| f_l(I_{HR}) - f_l(I_{SR}) \|_2^2
+```
+
+$f_l(I_{HR}), f_l(I_{SR})$ - deep features at layer $l$  
+$L$ - number of layers  
+$w_l$ - learned weight for layer $l$  
 
 ### 4: FID
 
 - **Description**: Frechet Inception Distance (FID) measures the distributional distance between features of real (ground-truth) and generated (SR) images extracted by a pretrained Inception-V3 network (typically the 2048-d pool3 features). It correlates well with perceptual quality at the dataset level.
 - **Range**: 0 to ∞ (0 = identical distributions). Better when ↓.
 - **Formula**:
-  ```math
-  \text{FID}(I_{HR}, I_{SR}) = \| \mu_{I_{HR}} - \mu_{I_{SR}} \|_2^2 + d^2(\Sigma_{I_{HR}}, \Sigma_{I_{SR}})
-  ```
-  $\mu_{I_{HR}}, \mu_{I_{SR}}$ - feature means (real vs generated)  
-  $\Sigma_{I_{HR}}, \Sigma_{I_{SR}}$ - feature covariances (real vs generated)  
-  $d^2$ - distance between covariance matrices
+
+```math
+\text{FID}(I_{HR}, I_{SR}) = \| \mu_{I_{HR}} - \mu_{I_{SR}} \|_2^2 + d^2(\Sigma_{I_{HR}}, \Sigma_{I_{SR}})
+```
+
+$\mu_{I_{HR}}, \mu_{I_{SR}}$ - feature means (real vs generated)  
+$\Sigma_{I_{HR}}, \Sigma_{I_{SR}}$ - feature covariances (real vs generated)  
+$d^2$ - distance between covariance matrices
 
 ### 5: Average Gradient (AG)
 
 - **Description**: Average Gradient (AG) measures the sharpness and detail preservation in reconstructed images by computing the mean magnitude of image gradients. It quantifies how well fine details and edges are preserved during super-resolution, with higher values indicating sharper, more detailed images.
 - **Range**: 0 to ∞ (typically 10-100 for natural images). Better when ↑.
 - **Formula**:
-   ```math
-  \text{AG}(I_{SR}) = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} \sqrt{(\nabla_x I_{SR}(i,j))^2 + (\nabla_y I_{SR}(i,j))^2}
-  ``` 
-  $\nabla_x I_{SR}(i,j), \nabla_y I_{SR}(i,j)$ - horizontal and vertical gradients at pixel $(i,j)$   
+
+```math
+\text{AG}(I_{SR}) = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} \sqrt{(\nabla_x I_{SR}(i,j))^2 + (\nabla_y I_{SR}(i,j))^2}
+```
+
+$\nabla_x I_{SR}(i,j), \nabla_y I_{SR}(i,j)$ - horizontal and vertical gradients at pixel $(i,j)$   
