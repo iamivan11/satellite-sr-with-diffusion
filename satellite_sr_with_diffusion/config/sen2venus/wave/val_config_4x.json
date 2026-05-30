@@ -1,0 +1,62 @@
+{
+    "name": "s2v_4x_wave_",
+    "gpu_ids": [
+        0
+    ],
+    "path": {
+        "log": "logs",
+        "results": "results",
+        "resume_state": "/content/drive/MyDrive/checkpoint/I___000_E__"
+    },
+    "datasets": {
+        "val": {
+            "name": "sen2venus_4x_test",
+            "dataroot": "/content/SEN2VENUS_4x/test",
+            "datatype": "img",
+            "data_len": -1
+        }
+    },
+    "model": {
+        "which_model_G": "wave",
+        "finetune_norm": false,
+        "unet": {
+            "in_channel": 24,
+            "out_channel": 12,
+            "inner_channel": 64,
+            "channel_mults": [
+                1,
+                2,
+                4,
+                8,
+                8
+            ],
+            "attn_res": [
+                12, 6
+            ],
+            "res_blocks": 2,
+            "dropout": 0.1
+        },
+        "beta_schedule": {
+            "train": {
+                "schedule": "linear",
+                "n_timestep": 2000,
+                "linear_start": 1e-06,
+                "linear_end": 0.01
+            },
+            "val": {
+                "schedule": "linear",
+                "n_timestep": 500,
+                "linear_start": 1e-06,
+                "linear_end": 0.01
+            }
+        },
+        "diffusion": {
+            "image_size": 96,
+            "channels": 3,
+            "conditional": true
+        }
+    },
+    "wandb": {
+        "project": "eval__"
+    }
+}
