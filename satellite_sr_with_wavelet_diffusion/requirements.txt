@@ -1,0 +1,21 @@
+# Core ML frameworks
+torch>=2.0.0
+torchvision>=0.15.0
+numpy==1.26.4
+
+# Image processing
+Pillow>=9.0.0
+opencv-python-headless==4.9.0.80
+
+# Metrics and evaluation
+torchmetrics[image]>=0.11.0
+lpips>=0.1.4
+
+# Logging
+wandb>=0.15.0
+
+# Utilities
+tqdm>=4.64.0
+
+# Wavelet transforms
+pytorch_wavelets>=1.3.0 
