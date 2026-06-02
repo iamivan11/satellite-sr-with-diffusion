@@ -1,152 +1,215 @@
 # Satellite Single Image Super-Resolution with Conditional Diffusion Models
 
-## Quickstart
-
-Install dependencies with [uv](https://docs.astral.sh/uv/) from the repo root:
-
-```bash
-uv sync
-```
-
-Then run the commands below from the `satellite_sr_with_wavelet_diffusion/` directory, with the
-environment active (`source .venv/bin/activate`) or each command prefixed with `uv run`.
-
-Pick a config from `config/<dataset>/<arch>/` and point its `datasets.train.dataroot` /
-`datasets.val.dataroot` at your data before running. Each split needs `hr/` and `lr/`
-subfolders; the shipped configs use Colab `/content/...` paths.
-
-**Train**
-```bash
-python main.py -c config/sen2venus/wave/train_new_config_4x.json      # add -enable_wandb for W&B
-python main.py -c config/sen2venus/wave/train_resume_config_4x.json   # resume from path.resume_state
-```
-
-**Evaluate** (PSNR / SSIM / LPIPS / FID)
-```bash
-python main.py -c config/sen2venus/wave/val_config_4x.json -p val
-python main.py -c config/sen2venus/wave/val_config_4x.json -p val --val_upsampler bicubic   # bicubic/lanczos baseline
-```
-
-**Inference only** (save SR images, no metrics)
-```bash
-python inference.py -c config/sen2venus/wave/val_config_4x.json
-```
-
-Training writes logs/checkpoints/samples under `experiments/<name>/`; evaluation and inference
-write images to the config's `results` path (evaluation also writes `metrics.txt`).
+This project studies single-image super-resolution of satellite imagery with
+conditional diffusion models. It compares the wavelet-domain Diffusion-Wavelet
+(DiWa) model against the pixel-space SR3 DDPM and interpolation baselines,
+trained and evaluated on the WorldStrat and SEN2VENµS datasets across 6.6×, 4×,
+3×, and 2× scales. It also quantifies how training on synthetically degraded
+versus real low-resolution images affects reconstruction quality.
 
 ## Datasets
 
 ### 1: WorldStrat
 
-- **Description**: A large-scale, open-source dataset featuring nearly 10,000 km² of high-resolution satellite imagery. It ensures a stratified representation of global land-use types and includes under-represented locations like humanitarian sites.
-- **Distribution of locations**: Global coverage with focus on humanitarian and conflict-affected regions, including areas in Africa, Middle East, and Asia.
-- **Images**: 
-    - High Resolution (HR): Sourced from Airbus SPOT 6/7 satellites, providing detailed images at up to 1.5 m/pixel resolution.
-    - Low Resolution (LR): Sourced from the public Sentinel-2 satellites, providing multi-spectral images at 10 m/pixel, temporally matched to the HR data.
-- **Split**: The official train/validation/test split provided by the dataset creators is used.
-    - Train: 3103 (pairs)
-    - Val: 393 (pairs)
-    - Test (never touched): 394 (pairs)
+- **Description**: A large-scale, open-source dataset featuring nearly 10,000
+  km² of high-resolution satellite imagery. It ensures a stratified
+  representation of global land-use types and includes under-represented
+  locations like humanitarian sites.
+- **Distribution of locations**: Global coverage with focus on humanitarian and
+  conflict-affected regions, including areas in Africa, Middle East, and Asia.
+- **Images**:
+  - High Resolution (HR): Sourced from Airbus SPOT 6/7 satellites, providing
+    detailed images at up to 1.5 m/pixel resolution.
+  - Low Resolution (LR): Sourced from the public Sentinel-2 satellites,
+    providing multi-spectral images at 10 m/pixel, temporally matched to the HR
+    data.
+- **Split**: The official train/validation/test split provided by the dataset
+  creators is used.
+  - Train: 3103 (pairs)
+  - Val: 393 (pairs)
+  - Test (never touched): 394 (pairs)
 
-### 2: SEN2VENUS
+### 2: SEN2VENµS
 
-- **Description**: An open dataset designed for super-resolution of Sentinel‑2 images by exploiting near-simultaneous acquisitions from the VENµS satellite. It contains cloud-free surface reflectance patches from Sentinel‑2 (10 m and 20 m resolution) paired with spatially-registered high-resolution reference patches (5 m) captured by VENµS on the same day.
-- **Distribution of locations**: Covers 29 distinct Earth sites, providing wide geographic diversity.
-- **Images**: 
-    - High Resolution (HR): VENµS surface reflectance at 5 m resolution, spatially and temporally aligned with Sentinel‑2 data.
-    - Low Resolution (LR): Sentinel‑2 surface reflectance at 10 m resolution.
-- **Split**: The dataset is organized by location; there is no standardized train/val/test split provided—users must define splits based on their experimental needs.
-    - Train: 105,767 (pairs)
-    - Val: 13,220 (pairs)
-    - Test: 13,220 (pairs)
+- **Description**: An open dataset designed for super-resolution of Sentinel‑2
+  images by exploiting near-simultaneous acquisitions from the VENµS satellite.
+  It contains cloud-free surface reflectance patches from Sentinel‑2 (10 m and
+  20 m resolution) paired with spatially-registered high-resolution reference
+  patches (5 m) captured by VENµS on the same day.
+- **Distribution of locations**: Covers 29 distinct Earth sites, providing wide
+  geographic diversity.
+- **Images**:
+  - High Resolution (HR): VENµS surface reflectance at 5 m resolution, spatially
+    and temporally aligned with Sentinel‑2 data.
+  - Low Resolution (LR): Sentinel‑2 surface reflectance at 10 m resolution.
+- **Split**: The dataset is organized by location; there is no standardized
+  train/val/test split provided—users must define splits based on their
+  experimental needs.
+  - Train: 105,767 (pairs)
+  - Val: 13,220 (pairs)
+  - Test: 13,220 (pairs)
 
 ## Architectures
 
 ### 1. SR3
 
-- **Core Concept**: Super-Resolution via Repeated Refinement (SR3) is a conditional diffusion model that progressively denoises from pure noise to reconstruct high-resolution (HR) images guided by a low-resolution (LR) input.
-- **Mechanism**: During training, Gaussian noise is added only to the HR target, while the LR input remains clean and serves as conditioning. At inference, the model starts from noise at HR scale and iteratively removes it, each step constrained by the LR image.
-- **Advantage**: Produces sharp and diverse HR reconstructions without adversarial training, offering better robustness to distribution shifts compared to GANs or pixel-loss regression models.
+- **Core Concept**: Super-Resolution via Repeated Refinement (SR3) is a
+  conditional diffusion model that progressively denoises from pure noise to
+  reconstruct high-resolution (HR) images guided by a low-resolution (LR) input.
+- **Mechanism**: During training, Gaussian noise is added only to the HR target,
+  while the LR input remains clean and serves as conditioning. At inference, the
+  model starts from noise at HR scale and iteratively removes it, each step
+  constrained by the LR image.
+- **Advantage**: Produces sharp and diverse HR reconstructions without
+  adversarial training, offering better robustness to distribution shifts
+  compared to GANs or pixel-loss regression models.
 
 ### 2. Diffusion Wavelet (DiWa)
 
-- **Core Concept**: DiWa integrates diffusion with the Discrete Wavelet Transform (DWT), modeling super-resolution in the frequency domain rather than in raw pixels.
-- **Mechanism**: Condition the model on the LR-upsampled wavelet coefficients (e.g., LL) and denoise a noise tensor in wavelet space to predict missing HF bands (LH/HL/HH); finally IDWT combines predicted details with preserved low-frequency structure to yield the HR image.
-- **Advantage**: This approach is efficient as it allows the model to focus its capacity on generating fine details and textures rather than learning the coarse structure of the image, which is already present in the low-resolution input.
+- **Core Concept**: DiWa integrates diffusion with the Discrete Wavelet
+  Transform (DWT), modeling super-resolution in the frequency domain rather than
+  in raw pixels.
+- **Mechanism**: Condition the model on the LR-upsampled wavelet coefficients
+  (e.g., LL) and denoise a noise tensor in wavelet space to predict missing HF
+  bands (LH/HL/HH); finally IDWT combines predicted details with preserved
+  low-frequency structure to yield the HR image.
+- **Advantage**: This approach is efficient as it allows the model to focus its
+  capacity on generating fine details and textures rather than learning the
+  coarse structure of the image, which is already present in the low-resolution
+  input.
 
 ## Metrics
 
-### 1: PSNR
+Reconstructions are evaluated with five standard super-resolution metrics. Full
+formulas and variable definitions are in the [project report](report/main.pdf).
 
-- **Description**: Peak Signal-to-Noise Ratio (PSNR) measures the quality of a reconstructed image compared to its original. It is defined via the Mean Squared Error (MSE). A higher PSNR generally indicates a higher quality reconstruction.
-- **Range**: 0 to ∞ dB (typically 20-40 dB for natural images). Better when ↑.
-- **Formula**:
+| Metric    | Measures                                                       | Better |
+| --------- | -------------------------------------------------------------- | :----: |
+| **PSNR**  | Pixel-level fidelity, derived from the mean squared error      |   ↑    |
+| **SSIM**  | Structural similarity (luminance, contrast, structure)         |   ↑    |
+| **LPIPS** | Perceptual similarity between deep-network features            |   ↓    |
+| **FID**   | Realism of the SR feature distribution vs. real HR (Inception) |   ↓    |
+| **AG**    | Sharpness / edge clarity, from average gradient magnitude      |   ↑    |
 
-```math
-\text{PSNR}(I_{HR}, I_{SR}) = 10 \cdot \log_{10} \left( \frac{L^2}{\text{MSE}(I_{HR}, I_{SR})} \right)
+## Setup
+
+### Requirements
+
+- Python 3.10–3.12
+- [uv](https://docs.astral.sh/uv/) package manager
+
+### Installation
+
+```bash
+uv sync                                 # create the environment and install deps
+source .venv/bin/activate               # or prefix each command below with `uv run`
+cd satellite_sr_with_diffusion          # run all commands from here
 ```
 
-$I_{HR}$ - HR image  
-$I_{SR}$ - SR image  
-$`L`$ - maximum possible pixel value (e.g., 255 for 8-bit images)  
-$\text{MSE}(I_{HR}, I_{SR}) = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} (I_{HR}(i,j) - I_{SR}(i,j))^2$  
-$H, W$ - image height and width
+## Train
 
-### 2: SSIM
+Runs are configured with [Hydra](https://hydra.cc): compose a run by selecting a
+**dataset** (`data=`) and an **architecture** (`model=`), and override any field
+on the command line. Point the config at your data first
+(`datasets.train.dataroot` / `datasets.val.dataroot`); each split is a folder
+with `hr/` and `lr/` subfolders.
 
-- **Description**: The Structural Similarity Index (SSIM) is a metric that quantifies image quality degradation based on changes in structural information. A full-reference perceptual similarity index that combines three local comparisons—*luminance*, *contrast*, and *structure*—via statistics of means, variances, and cross-covariance.
-- **Range**: -1 to 1 (typically 0.1-0.9 for degraded images, 1 = perfect similarity). Most implementations return values in [0, 1], with negatives possible in edge cases depending on data range/regularization constants. Better when ↑.
-- **Formula**:
-
-```math
-\text{SSIM}(I_{HR}, I_{SR}) =
-\left( \frac{2\mu_{I_{HR}} \mu_{I_{SR}} + c_1}{\mu_{I_{HR}}^2 + \mu_{I_{SR}}^2 + c_1} \right)
-\left( \frac{2\sigma_{I_{HR}} \sigma_{I_{SR}} + c_2}{\sigma_{I_{HR}}^2 + \sigma_{I_{SR}}^2 + c_2} \right)
-\left( \frac{\sigma_{I_{HR} I_{SR}} + c_3}{\sigma_{I_{HR}} \sigma_{I_{SR}} + c_3} \right)
+```bash
+python main.py data=sen2venus_4x model=wave                      # train (add wandb.enable=true for W&B)
+python main.py data=sen2venus_4x model=wave phase=val \
+    path.resume_state=/path/to/checkpoint                        # evaluate (PSNR/SSIM/LPIPS/FID)
+python main.py data=sen2venus_4x model=wave phase=val \
+    val_upsampler=bicubic path.resume_state=/path/to/checkpoint  # bicubic/lanczos baseline
 ```
 
-$\mu_{I_{HR}}, \mu_{I_{SR}}$ - mean brightness of each image  
-$\sigma_{I_{HR}}, \sigma_{I_{SR}}$ - standard deviations (contrast)  
-$\sigma_{I_{HR} I_{SR}}$ - covariance (structural similarity)  
-$c_1, c_2, c_3$ - small constants for stability  
+`data` ∈ {`sen2venus_4x`, `sen2venus_3x`, `sen2venus_2x`, `worldstrat`,
+`custom`} and `model` ∈ {`wave`, `sr3`}. Training writes to
+`experiments/<name>/`; evaluation and inference write to `results/<name>/`,
+where `<name>` defaults to `<dataset>_<scale>_<arch>`.
 
-### 3: LPIPS
+### Use your own dataset / resolution
 
-- **Description**: The Learned Perceptual Image Patch Similarity (LPIPS) metric computes the distance between the deep features of two images extracted from a pre-trained network (like VGG). It is designed to align better with human perception of image similarity than traditional metrics like PSNR and SSIM.
-- **Range**: 0 to 1+ (typically 0.1-0.8 for SR images, 0 = identical images). Better when ↓.
-- **Formula**:
+The pipeline is dataset-agnostic: any dataset works as long as each split is a
+directory with `hr/` and `lr/` subfolders holding the **same number of
+index-aligned images** (the _i_-th LR image is the low-res counterpart of the
+_i_-th HR image). Each `lr/` image must be **pre-upsampled to the HR size**, so
+`hr/` and `lr/` images share the same dimensions (use
+`python scripts/prepare_data.py upscale` to prepare them). Resolution is
+controlled by a single knob, `hr_size` (the HR patch size, a multiple of 32);
+the model's `image_size` and attention resolutions are derived from it
+automatically (the wavelet model operates at `hr_size/2`). Either edit
+[configs/data/custom.yaml](configs/data/custom.yaml) or override on the command
+line:
 
-```math
-\text{LPIPS}(I_{HR}, I_{SR}) = \sum_{l=1}^{L} w_l \cdot \| f_l(I_{HR}) - f_l(I_{SR}) \|_2^2
+```bash
+python main.py data=custom model=wave hr_size=128 \
+    datasets.train.dataroot=/path/to/your_dataset/train \
+    datasets.val.dataroot=/path/to/your_dataset/val
 ```
 
-$f_l(I_{HR}), f_l(I_{SR})$ - deep features at layer $l$  
-$L$ - number of layers  
-$w_l$ - learned weight for layer $l$  
+To add a dataset permanently, copy a file in [configs/data/](configs/data/), set
+its `hr_size` and dataroots, and select it with `data=<your_file>`. See
+[configs/config.yaml](configs/config.yaml) for all overridable fields.
 
-### 4: FID
+## Inference
 
-- **Description**: Frechet Inception Distance (FID) measures the distributional distance between features of real (ground-truth) and generated (SR) images extracted by a pretrained Inception-V3 network (typically the 2048-d pool3 features). It correlates well with perceptual quality at the dataset level.
-- **Range**: 0 to ∞ (0 = identical distributions). Better when ↓.
-- **Formula**:
-
-```math
-\text{FID}(I_{HR}, I_{SR}) = \| \mu_{I_{HR}} - \mu_{I_{SR}} \|_2^2 + d^2(\Sigma_{I_{HR}}, \Sigma_{I_{SR}})
+```bash
+python inference.py data=sen2venus_4x model=wave \
+    path.resume_state=/path/to/checkpoint                        # inference only (save SR images)
 ```
 
-$\mu_{I_{HR}}, \mu_{I_{SR}}$ - feature means (real vs generated)  
-$\Sigma_{I_{HR}}, \Sigma_{I_{SR}}$ - feature covariances (real vs generated)  
-$d^2$ - distance between covariance matrices
+## Structure
 
-### 5: Average Gradient (AG)
-
-- **Description**: Average Gradient (AG) measures the sharpness and detail preservation in reconstructed images by computing the mean magnitude of image gradients. It quantifies how well fine details and edges are preserved during super-resolution, with higher values indicating sharper, more detailed images.
-- **Range**: 0 to ∞ (typically 10-100 for natural images). Better when ↑.
-- **Formula**:
-
-```math
-\text{AG}(I_{SR}) = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} \sqrt{(\nabla_x I_{SR}(i,j))^2 + (\nabla_y I_{SR}(i,j))^2}
+```
+.
+├── configs/                       # Hydra hierarchical configs
+│   ├── config.yaml                #   root config (defaults, train/path/wandb settings)
+│   ├── data/                      #   dataset + resolution groups (sen2venus_*, worldstrat, custom)
+│   └── model/                     #   architecture groups (wave, sr3)
+├── satellite_sr_with_diffusion/   # main package
+│   ├── main.py                    # entry point: training & evaluation (phase=train / phase=val)
+│   ├── inference.py               # entry point: inference only (save SR images, no metrics)
+│   ├── core/                      # config loader, logging, metrics, shared inference engine
+│   ├── data/                      # generic HR/LR pair loader (image_pair_dataset.py) & helpers
+│   ├── model/                     # diffusion models
+│   │   ├── sr3_modules/           #   SR3   — pixel-space U-Net + diffusion
+│   │   └── wave_modules/          #   DiWa  — wavelet-space U-Net + diffusion
+│   └── analysis/                  # texture/sharpness analysis (ag.py, glcm.py, lbp.py)
+├── scripts/                       # data preparation
+│   ├── prepare_data.py            #   degrade / resize / upscale subcommands
+│   ├── match_lr_colors_to_hr.py   #   histogram-match LR colours to HR
+│   ├── rename_images.py           #   batch rename
+│   └── *_split.csv, worldstrat_config.json   # dataset splits + cloud labels
+├── report/main.pdf                # compiled project report (LaTeX sources are gitignored)
+├── pyproject.toml                 # dependencies + ruff/codespell config (uv-managed)
+└── uv.lock                        # pinned dependency lockfile
 ```
 
-$\nabla_x I_{SR}(i,j), \nabla_y I_{SR}(i,j)$ - horizontal and vertical gradients at pixel $(i,j)$   
+## Tech Stack
+
+The stack favors reproducibility and frequency-domain super-resolution — each
+concern (training, configuration, metrics, tracking) handled by a focused,
+GPU-friendly tool.
+
+| Layer               | Choice                                        | Why this over alternatives                                                                                                                  |
+| ------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deep learning       | **PyTorch + Torchvision**                     | Dynamic graphs make it well suited to research and rapid iteration; mature ecosystem for diffusion models, with transforms and backbones    |
+| Wavelet transforms  | **PyTorch Wavelets**                          | GPU, autograd-ready 2D DWT/IDWT for the DiWa frequency-domain model (vs CPU PyWavelets)                                                     |
+| Image processing    | **Pillow · OpenCV (headless) · scikit-image** | Fast I/O, resizing and degradation pipelines (headless OpenCV drops GUI deps on servers); scikit-image powers the GLCM/LBP texture analysis |
+| Metrics             | **torchmetrics[image] · lpips**               | Batched, on-device PSNR / SSIM / LPIPS / FID (vs hand-rolled metrics)                                                                       |
+| Experiment tracking | **Weights & Biases**                          | Hosted dashboards for losses, samples and checkpoints across many runs                                                                      |
+| Config              | **Hydra**                                     | Composable YAML groups + CLI overrides → swap dataset/model/scale in one flag (vs argparse)                                                 |
+| Env & packaging     | **uv**                                        | Rust-fast installs with a real lockfile                                                                                                     |
+| Lint & format       | **Ruff**                                      | One Rust tool replaces flake8 + black + isort, near-instant                                                                                 |
+| Pre-commit hooks    | **pre-commit** (+ prettier, codespell)        | Auto-enforces formatting, typo and large-file checks before every commit                                                                    |
+
+## Hardware
+
+Training spanned whichever accelerators were available at the time, so timely
+access — not just raw throughput — shaped the hardware choice for each stage.
+
+| Environment    | Device                   | Role                                     |
+| -------------- | ------------------------ | ---------------------------------------- |
+| Local          | **MacBook Pro M3 (MPS)** | Development, debugging, small-scale runs |
+| Google Colab   | **NVIDIA Tesla T4**      | Mid-scale training and evaluation        |
+| BlueBEAR (HPC) | **NVIDIA A100 40 GB**    | Large-scale training of the final models |

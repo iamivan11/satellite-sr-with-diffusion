@@ -20,12 +20,14 @@ Filenames in `hr` and `lr` are assumed to correspond 1:1.
 """
 
 from __future__ import annotations
-import os
+
 import argparse
+import os
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List, Tuple
-import numpy as np
+
 import cv2
+import numpy as np
 from tqdm import tqdm
 
 
@@ -49,19 +51,21 @@ def try_import_match_histograms():
 
 
 DEFAULT_BASE_DIR: Path = Path("data/DATASET")
-DEFAULT_SPLITS: List[str] = ["train", "test", "val"]
+DEFAULT_SPLITS: list[str] = ["train", "test", "val"]
 DEFAULT_METHOD: str = "hist"
 DEFAULT_EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
 
 
-def list_image_files(directory: Path) -> List[str]:
+def list_image_files(directory: Path) -> list[str]:
     try:
         return sorted([f for f in os.listdir(directory) if Path(f).suffix.lower() in DEFAULT_EXTS])
     except FileNotFoundError:
         return []
 
 
-def mean_std_color_match(source_bgr: np.ndarray, reference_bgr: np.ndarray, eps: float = 1e-6) -> np.ndarray:
+def mean_std_color_match(
+    source_bgr: np.ndarray, reference_bgr: np.ndarray, eps: float = 1e-6
+) -> np.ndarray:
     """Match source image colors to reference using per-channel mean/std normalization.
 
     Works for arbitrary sizes; channels are assumed BGR.
@@ -79,8 +83,7 @@ def mean_std_color_match(source_bgr: np.ndarray, reference_bgr: np.ndarray, eps:
     src_stds = np.maximum(src_stds, eps)
 
     matched = (source - src_means) * (ref_stds / src_stds) + ref_means
-    matched = np.clip(matched, 0, 255).astype(np.uint8)
-    return matched
+    return np.clip(matched, 0, 255).astype(np.uint8)
 
 
 def color_match_pair(
@@ -98,12 +101,10 @@ def color_match_pair(
         src = np.ascontiguousarray(lr_img_bgr)
         ref = np.ascontiguousarray(hr_img_bgr)
         matched = skimage_match_histograms(src, ref)
-        matched = np.clip(matched, 0, 255).astype(np.uint8)
-        return matched
-    elif method == "meanstd":
+        return np.clip(matched, 0, 255).astype(np.uint8)
+    if method == "meanstd":
         return mean_std_color_match(lr_img_bgr, hr_img_bgr)
-    else:
-        raise ValueError(f"Unknown method: {method}")
+    raise ValueError(f"Unknown method: {method}")
 
 
 def ensure_dir(path: Path) -> None:
@@ -116,7 +117,7 @@ def process_split(
     method: str,
     inplace: bool,
     dry_run: bool,
-) -> Tuple[int, int, int]:
+) -> tuple[int, int, int]:
     """Process one split (e.g., train or test).
 
     Returns (num_processed, num_missing_pairs, num_errors)
@@ -134,11 +135,14 @@ def process_split(
         print(f"[WARN] No LR images found in {lr_dir}")
 
     common = sorted(hr_files & lr_files)
-    missing_pairs = (len(hr_files | lr_files) - len(common))
+    missing_pairs = len(hr_files | lr_files) - len(common)
 
     if dry_run:
         target_note = "(in-place)" if inplace else f"-> {out_dir}"
-        print(f"Split '{split}': would color-match {len(common)} pairs {target_note}; {missing_pairs} unmatched filenames")
+        print(
+            f"Split '{split}': would color-match {len(common)} pairs {target_note}; "
+            f"{missing_pairs} unmatched filenames"
+        )
         return (0, missing_pairs, 0)
 
     if not inplace:
@@ -149,7 +153,7 @@ def process_split(
     processed = 0
     errors = 0
 
-    desc = f"{split} ({'hist' if method=='hist' else 'meanstd'})"
+    desc = f"{split} ({'hist' if method == 'hist' else 'meanstd'})"
     for filename in tqdm(common, desc=desc):
         try:
             lr_path = lr_dir / filename
@@ -165,7 +169,7 @@ def process_split(
             matched = color_match_pair(lr_img, hr_img, method, match_hist_fn)
 
             # Preserve original spatial resolution of LR image
-            save_path = (out_dir / filename)
+            save_path = out_dir / filename
             ok = cv2.imwrite(str(save_path), matched)
             if not ok:
                 errors += 1
@@ -262,6 +266,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     print(f"Errors: {totals['errors']}")
     if not args.dry_run:
         print("Color matching completed.")
+
 
 if __name__ == "__main__":
     main()

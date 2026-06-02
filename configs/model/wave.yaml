@@ -1,0 +1,36 @@
+# @package model
+# DiWa --- conditional DDPM in the wavelet domain.
+# The U-Net operates on 2D-DWT coefficients, i.e. at half the HR spatial size,
+# so image_size = hr_size / 2 and the attention resolutions are halved too.
+which_model_G: wave
+finetune_norm: false
+
+unet:
+  in_channel: 24 # RGB: (3 channels x 4 DWT sub-bands) x 2 (condition + noisy)
+  out_channel: 12 # RGB: 3 channels x 4 DWT sub-bands
+  inner_channel: 64
+  channel_mults: [1, 2, 4, 8, 8]
+  attn_res: ${attn_res:${hr_size},2} # auto: two lowest levels of a 5-level U-Net
+  res_blocks: 2
+  dropout: 0.1
+
+beta_schedule:
+  train:
+    {
+      schedule: linear,
+      n_timestep: 2000,
+      linear_start: 1.0e-06,
+      linear_end: 0.01,
+    }
+  val:
+    {
+      schedule: linear,
+      n_timestep: 500,
+      linear_start: 1.0e-06,
+      linear_end: 0.01,
+    }
+
+diffusion:
+  image_size: ${floordiv:${hr_size},2} # wavelet coefficients are half the HR size
+  channels: 3
+  conditional: true

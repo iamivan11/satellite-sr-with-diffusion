@@ -1,0 +1,36 @@
+# @package model
+# SR3 --- conditional DDPM in pixel space (operates directly at the HR size).
+# Defaults reproduce the ~515M variant; for the ~97M variant override
+#   model.unet.inner_channel=64 model.unet.res_blocks=2
+which_model_G: sr3
+finetune_norm: false
+
+unet:
+  in_channel: 6 # RGB: 3 (condition) + 3 (noisy)
+  out_channel: 3
+  inner_channel: 128
+  channel_mults: [1, 2, 4, 8, 8]
+  attn_res: ${attn_res:${hr_size},1} # auto: two lowest levels of a 5-level U-Net
+  res_blocks: 3
+  dropout: 0.1
+
+beta_schedule:
+  train:
+    {
+      schedule: linear,
+      n_timestep: 2000,
+      linear_start: 1.0e-06,
+      linear_end: 0.01,
+    }
+  val:
+    {
+      schedule: linear,
+      n_timestep: 500,
+      linear_start: 1.0e-06,
+      linear_end: 0.01,
+    }
+
+diffusion:
+  image_size: ${hr_size}
+  channels: 3
+  conditional: true
