@@ -29,7 +29,7 @@ versus real low-resolution images affects reconstruction quality.
   - Val: 393 (pairs)
   - Test (never touched): 394 (pairs)
 
-### 2: SEN2VENUS
+### 2: SEN2VENµS
 
 - **Description**: An open dataset designed for super-resolution of Sentinel‑2
   images by exploiting near-simultaneous acquisitions from the VENµS satellite.
@@ -191,17 +191,17 @@ The stack favors reproducibility and frequency-domain super-resolution — each
 concern (training, configuration, metrics, tracking) handled by a focused,
 GPU-friendly tool.
 
-| Layer               | Choice                                 | Why this over alternatives                                                                                                               |
-| ------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Deep learning       | **PyTorch + Torchvision**              | Dynamic graphs make it well suited to research and rapid iteration; mature ecosystem for diffusion models, with transforms and backbones |
-| Wavelet transforms  | **PyTorch Wavelets**                   | GPU, autograd-ready 2D DWT/IDWT for the DiWa frequency-domain model (vs CPU PyWavelets)                                                  |
-| Image processing    | **Pillow · OpenCV (headless)**         | Fast I/O, resizing and degradation pipelines; headless OpenCV drops GUI deps on servers                                                  |
-| Metrics             | **torchmetrics[image] · lpips**        | Batched, on-device PSNR / SSIM / LPIPS / FID (vs hand-rolled metrics)                                                                    |
-| Experiment tracking | **Weights & Biases**                   | Hosted dashboards for losses, samples and checkpoints across many runs                                                                   |
-| Config              | **Hydra**                              | Composable YAML groups + CLI overrides → swap dataset/model/scale in one flag (vs argparse)                                              |
-| Env & packaging     | **uv**                                 | Rust-fast installs with a real lockfile                                                                                                  |
-| Lint & format       | **Ruff**                               | One Rust tool replaces flake8 + black + isort, near-instant                                                                              |
-| Pre-commit hooks    | **pre-commit** (+ prettier, codespell) | Auto-enforces formatting, typo and large-file checks before every commit                                                                 |
+| Layer               | Choice                                        | Why this over alternatives                                                                                                                  |
+| ------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deep learning       | **PyTorch + Torchvision**                     | Dynamic graphs make it well suited to research and rapid iteration; mature ecosystem for diffusion models, with transforms and backbones    |
+| Wavelet transforms  | **PyTorch Wavelets**                          | GPU, autograd-ready 2D DWT/IDWT for the DiWa frequency-domain model (vs CPU PyWavelets)                                                     |
+| Image processing    | **Pillow · OpenCV (headless) · scikit-image** | Fast I/O, resizing and degradation pipelines (headless OpenCV drops GUI deps on servers); scikit-image powers the GLCM/LBP texture analysis |
+| Metrics             | **torchmetrics[image] · lpips**               | Batched, on-device PSNR / SSIM / LPIPS / FID (vs hand-rolled metrics)                                                                       |
+| Experiment tracking | **Weights & Biases**                          | Hosted dashboards for losses, samples and checkpoints across many runs                                                                      |
+| Config              | **Hydra**                                     | Composable YAML groups + CLI overrides → swap dataset/model/scale in one flag (vs argparse)                                                 |
+| Env & packaging     | **uv**                                        | Rust-fast installs with a real lockfile                                                                                                     |
+| Lint & format       | **Ruff**                                      | One Rust tool replaces flake8 + black + isort, near-instant                                                                                 |
+| Pre-commit hooks    | **pre-commit** (+ prettier, codespell)        | Auto-enforces formatting, typo and large-file checks before every commit                                                                    |
 
 ## Hardware
 
