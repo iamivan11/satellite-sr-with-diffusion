@@ -5,7 +5,8 @@ conditional diffusion models. It compares the wavelet-domain Diffusion-Wavelet
 (DiWa) model against the pixel-space SR3 DDPM and interpolation baselines,
 trained and evaluated on the WorldStrat and SEN2VENµS datasets across 6.6×, 4×,
 3×, and 2× scales. It also quantifies how training on synthetically degraded
-versus real low-resolution images affects reconstruction quality.
+versus real low-resolution images affects reconstruction quality. Everything can
+be found in the [paper](report/main.pdf) that comes with the project.
 
 ## Datasets
 
@@ -24,10 +25,10 @@ versus real low-resolution images affects reconstruction quality.
     providing multi-spectral images at 10 m/pixel, temporally matched to the HR
     data.
 - **Split**: The official train/validation/test split provided by the dataset
-  creators is used.
-  - Train: 3103 (pairs)
-  - Val: 393 (pairs)
-  - Test (never touched): 394 (pairs)
+  creators is used (in pairs).
+  - Train: 3103 (80%)
+  - Val: 393 (10%)
+  - Test (never touched): 394 (10%)
 
 ### 2: SEN2VENµS
 
@@ -44,10 +45,10 @@ versus real low-resolution images affects reconstruction quality.
   - Low Resolution (LR): Sentinel‑2 surface reflectance at 10 m resolution.
 - **Split**: The dataset is organized by location; there is no standardized
   train/val/test split provided—users must define splits based on their
-  experimental needs.
-  - Train: 105,767 (pairs)
-  - Val: 13,220 (pairs)
-  - Test: 13,220 (pairs)
+  experimental needs (in pairs).
+  - Train: 105,767 (80%)
+  - Val: 13,220 (10%)
+  - Test: 13,220 (10%)
 
 ## Architectures
 
@@ -80,8 +81,7 @@ versus real low-resolution images affects reconstruction quality.
 
 ## Metrics
 
-Reconstructions are evaluated with five standard super-resolution metrics. Full
-formulas and variable definitions are in the [project report](report/main.pdf).
+Reconstructions are evaluated with five standard super-resolution metrics.
 
 | Metric    | Measures                                                       | Better |
 | --------- | -------------------------------------------------------------- | :----: |
