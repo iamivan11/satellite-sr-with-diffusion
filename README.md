@@ -174,8 +174,7 @@ python inference.py data=sen2venus_4x model=wave \
 │   ├── model/                     # diffusion models
 │   │   ├── sr3_modules/           #   SR3   — pixel-space U-Net + diffusion
 │   │   └── wave_modules/          #   DiWa  — wavelet-space U-Net + diffusion
-│   ├── analysis/                  # texture/sharpness analysis (ag.py, glcm.py, lbp.py)
-│   └── notebooks/                 # sample training & evaluation notebooks
+│   └── analysis/                  # texture/sharpness analysis (ag.py, glcm.py, lbp.py)
 ├── scripts/                       # data preparation
 │   ├── prepare_data.py            #   degrade / resize / upscale subcommands
 │   ├── match_lr_colors_to_hr.py   #   histogram-match LR colours to HR
