@@ -180,7 +180,7 @@ python inference.py data=sen2venus_4x model=wave \
 │   ├── match_lr_colors_to_hr.py   #   histogram-match LR colours to HR
 │   ├── rename_images.py           #   batch rename
 │   └── *_split.csv, worldstrat_config.json   # dataset splits + cloud labels
-├── report/                        # project report (LaTeX: chapters/, figures/, main.pdf)
+├── report/main.pdf                # compiled project report (LaTeX sources are gitignored)
 ├── pyproject.toml                 # dependencies + ruff/codespell config (uv-managed)
 └── uv.lock                        # pinned dependency lockfile
 ```
