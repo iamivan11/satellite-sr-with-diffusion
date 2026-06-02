@@ -1,0 +1,20 @@
+# @package _global_
+# SEN2VENµS, 3x SR  (LR 64x64 -> HR 192x192)
+dataset_name: sen2venus
+scale: "3x"
+hr_size: 192 # HR patch size; drives model image_size & attn_res
+
+datasets:
+  train:
+    name: ${name}_train
+    dataroot: ./datasets/sen2venus_3x/train
+    datatype: img
+    batch_size: 16
+    num_workers: 4
+    use_shuffle: true
+    data_len: -1
+  val:
+    name: ${name}_val
+    dataroot: ./datasets/sen2venus_3x/val
+    datatype: img
+    data_len: 100

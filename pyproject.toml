@@ -15,14 +15,72 @@ dependencies = [
     # Metrics and evaluation
     "torchmetrics[image]>=0.11.0",
     "lpips>=0.1.4",
+    # Texture analysis (GLCM/LBP scripts in analysis/)
+    "scikit-image>=0.19.0",
     # Logging
     "wandb>=0.15.0",
     # Utilities
     "tqdm>=4.64.0",
-    # Wavelet transforms
+    # Wavelet transforms (pytorch_wavelets needs PyWavelets at runtime)
     "pytorch_wavelets>=1.3.0",
+    "PyWavelets>=1.4.0",
+    # Hierarchical configuration
+    "hydra-core>=1.3.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+    "ruff>=0.14.10",
 ]
 
 [tool.uv]
 # Dependency-only project: manage the environment, don't build/install the repo as a package.
 package = false
+
+[tool.ruff]
+line-length = 100
+format = { docstring-code-format = true }
+
+[tool.ruff.lint]
+select = [
+    # isort
+    "I",
+    # pycodestyle
+    "E", "W",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # flake8-builtins
+    "A",
+    # flake8-return
+    "RET",
+    # flake8-use-pathlib
+    "PTH",
+    # Ruff-specific rules
+    "RUF",
+]
+
+# PTH (pathlib) enforcement is disabled: migrating the existing os.path-based
+# I/O (checkpoint save/load, dataset/loader, analysis scripts) is a behaviour-
+# sensitive refactor that is out of scope for the lint pass. Re-enable and
+# migrate deliberately if desired.
+ignore = ["PTH"]
+
+pycodestyle = { max-doc-length = 105 }
+
+[tool.ruff.lint.per-file-ignores]
+# Research/sample notebooks may keep long lines.
+"*.ipynb" = ["E501"]
+
+[tool.codespell]
+# Skip the lockfile, binary/report artefacts, and notebooks (prose/output noise).
+skip = "uv.lock,*.lock,*.png,*.jpg,*.pdf,./report,./.git,*.ipynb"
+# `continous` is an existing public parameter name (diffusion.test(continous=...));
+# renaming it is a behaviour-affecting API change, so accept the spelling here.
+ignore-words-list = "continous"

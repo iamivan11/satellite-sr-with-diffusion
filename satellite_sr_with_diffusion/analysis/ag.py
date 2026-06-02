@@ -1,17 +1,18 @@
 import argparse
 import glob
 import os
-from typing import List
 
 import cv2
 import numpy as np
 
 try:
     import tqdm  # type: ignore
+
     def progress_iter(iterable, desc: str, unit: str):
         return tqdm.tqdm(iterable, desc=desc, unit=unit)
 except Exception:
     tqdm = None
+
     def progress_iter(iterable, desc: str, unit: str):
         return iterable
 
@@ -40,16 +41,22 @@ def compute_average_gradient(image_path: str) -> float:
     return float(np.mean(magnitude))
 
 
-def find_sr_images(folder: str, ext: str) -> List[str]:
+def find_sr_images(folder: str, ext: str) -> list[str]:
     """Find all super-res images matching *_sr.<ext> in a folder."""
     pattern = os.path.join(folder, f"*_sr.{ext}")
     return sorted(glob.glob(pattern))
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Compute average 'Average Gradient (AG)' over *_sr images in a folder.")
-    parser.add_argument("folder", type=str, help="Path to folder containing images (e.g., /path/to/dir)")
-    parser.add_argument("--ext", type=str, default="png", help="Image extension to match (default: png)")
+    parser = argparse.ArgumentParser(
+        description="Compute average 'Average Gradient (AG)' over *_sr images in a folder."
+    )
+    parser.add_argument(
+        "folder", type=str, help="Path to folder containing images (e.g., /path/to/dir)"
+    )
+    parser.add_argument(
+        "--ext", type=str, default="png", help="Image extension to match (default: png)"
+    )
     parser.add_argument("--per-image", action="store_true", help="Also print per-image AG values")
     args = parser.parse_args()
 
@@ -57,7 +64,7 @@ def main() -> None:
     if not sr_images:
         raise SystemExit(f"No images found matching '*_sr.{args.ext}' in: {args.folder}")
 
-    ag_values: List[float] = []
+    ag_values: list[float] = []
     print(f"Found {len(sr_images)} images matching '*_sr.{args.ext}'.")
     for path in progress_iter(sr_images, desc="Computing AG", unit="img"):
         ag = compute_average_gradient(path)
@@ -71,5 +78,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

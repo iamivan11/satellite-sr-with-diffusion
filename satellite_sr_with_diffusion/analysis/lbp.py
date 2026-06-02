@@ -1,7 +1,6 @@
 import argparse
 import glob
 import os
-from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
@@ -13,10 +12,12 @@ except Exception as e:  # pragma: no cover
 
 try:
     import tqdm  # type: ignore
+
     def progress_iter(iterable, desc: str, unit: str):
         return tqdm.tqdm(iterable, desc=desc, unit=unit)
 except Exception:
     tqdm = None
+
     def progress_iter(iterable, desc: str, unit: str):
         return iterable
 
@@ -36,7 +37,7 @@ def compute_lbp_hist(
     points: int = 8,
     radius: float = 1.0,
     method: str = "uniform",
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Compute normalized histogram of LBP codes.
 
     Parameters:
@@ -51,10 +52,7 @@ def compute_lbp_hist(
     lbp = local_binary_pattern(img, P=points, R=radius, method=method)
 
     # Number of bins: for 'uniform' with P points it's P + 2; otherwise cover full range
-    if method == "uniform":
-        n_bins = points + 2
-    else:
-        n_bins = int(lbp.max() + 1)
+    n_bins = points + 2 if method == "uniform" else int(lbp.max() + 1)
 
     hist, _ = np.histogram(lbp.ravel(), bins=np.arange(0, n_bins + 1), range=(0, n_bins))
     hist = hist.astype(np.float64)
@@ -62,18 +60,20 @@ def compute_lbp_hist(
     if hist_sum > 0:
         hist /= hist_sum
 
-    features: Dict[str, float] = {f"bin_{i}": float(hist[i]) for i in range(n_bins)}
+    features: dict[str, float] = {f"bin_{i}": float(hist[i]) for i in range(n_bins)}
     return features
 
 
-def find_images(folder: str, exts: Tuple[str, ...] = ("png", "jpg", "jpeg", "tif", "tiff")) -> List[str]:
-    paths: List[str] = []
+def find_images(
+    folder: str, exts: tuple[str, ...] = ("png", "jpg", "jpeg", "tif", "tiff")
+) -> list[str]:
+    paths: list[str] = []
     for ext in exts:
         paths.extend(glob.glob(os.path.join(folder, f"*.{ext}")))
     return sorted(paths)
 
 
-def write_csv(rows: List[Dict[str, str]], out_path: str) -> None:
+def write_csv(rows: list[dict[str, str]], out_path: str) -> None:
     if not rows:
         with open(out_path, "w", encoding="utf-8") as f:
             f.write("")
@@ -85,13 +85,15 @@ def write_csv(rows: List[Dict[str, str]], out_path: str) -> None:
             f.write(",".join(str(r[h]) for h in headers) + "\n")
 
 
-def process_folder(folder: str, label: str, points: int, radius: float, method: str) -> List[Dict[str, str]]:
+def process_folder(
+    folder: str, label: str, points: int, radius: float, method: str
+) -> list[dict[str, str]]:
     paths = find_images(folder)
-    rows: List[Dict[str, str]] = []
+    rows: list[dict[str, str]] = []
     for p in progress_iter(paths, desc=f"LBP {label}", unit="img"):
         img = read_gray_uint8(p)
         feats = compute_lbp_hist(img, points=points, radius=radius, method=method)
-        row: Dict[str, str] = {"filename": os.path.basename(p), "set": label}
+        row: dict[str, str] = {"filename": os.path.basename(p), "set": label}
         for k, v in feats.items():
             row[k] = f"{v:.6f}"
         rows.append(row)
@@ -103,7 +105,9 @@ def main() -> None:
         description="Compute LBP histograms for images under root/{sr,hr}. Outputs CSVs."
     )
     parser.add_argument("root", type=str, help="Root folder containing 'sr' and 'hr' subfolders")
-    parser.add_argument("--out", type=str, default=None, help="Output directory for CSVs (default: <root>)")
+    parser.add_argument(
+        "--out", type=str, default=None, help="Output directory for CSVs (default: <root>)"
+    )
     parser.add_argument("--points", type=int, default=8, help="LBP points (P)")
     parser.add_argument("--radius", type=float, default=1.0, help="LBP radius (R)")
     parser.add_argument("--method", type=str, default="uniform", help="LBP method (e.g., uniform)")
@@ -118,8 +122,12 @@ def main() -> None:
     os.makedirs(out_dir, exist_ok=True)
 
     # Process SR and HR
-    sr_rows = process_folder(sr_dir, label="sr", points=args.points, radius=args.radius, method=args.method)
-    hr_rows = process_folder(hr_dir, label="hr", points=args.points, radius=args.radius, method=args.method)
+    sr_rows = process_folder(
+        sr_dir, label="sr", points=args.points, radius=args.radius, method=args.method
+    )
+    hr_rows = process_folder(
+        hr_dir, label="hr", points=args.points, radius=args.radius, method=args.method
+    )
 
     # Write per-set CSVs
     sr_csv = os.path.join(out_dir, "lbp_sr.csv")
@@ -129,13 +137,13 @@ def main() -> None:
 
     # Optional combined CSV by filename if both sets present (matching bins)
     # Determine common bin keys from SR rows if any
-    bin_keys: List[str] = [k for k in sr_rows[0].keys() if k.startswith("bin_")] if sr_rows else []
+    bin_keys: list[str] = [k for k in sr_rows[0] if k.startswith("bin_")] if sr_rows else []
     sr_map = {r["filename"]: r for r in sr_rows}
-    combined: List[Dict[str, str]] = []
+    combined: list[dict[str, str]] = []
     for r in hr_rows:
         name = r["filename"]
         if name in sr_map:
-            row: Dict[str, str] = {"filename": name}
+            row: dict[str, str] = {"filename": name}
             for bk in bin_keys:
                 row[f"sr_{bk}"] = sr_map[name][bk]
                 row[f"hr_{bk}"] = r[bk]
@@ -148,5 +156,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

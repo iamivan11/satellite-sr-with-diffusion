@@ -1,0 +1,35 @@
+# @package _global_
+# Template for ANY dataset at ANY resolution.
+#
+# Requirements:
+#   - Each split is a directory with `hr/` and `lr/` subfolders.
+#   - `hr/` and `lr/` hold the same number of index-aligned images
+#     (the i-th LR image is the low-res counterpart of the i-th HR image).
+#   - Each `lr/` image is pre-upsampled to the HR size, so `hr/` and `lr/`
+#     images share the same dimensions (hr_size x hr_size). Use
+#     `python scripts/prepare_data.py upscale` to prepare them.
+#
+# To use, override the dataroots (and hr_size) on the command line, e.g.:
+#   python main.py data=custom hr_size=128 \
+#       datasets.train.dataroot=/path/to/your_dataset/train \
+#       datasets.val.dataroot=/path/to/your_dataset/val
+# or edit the values below.
+
+dataset_name: mydata # used only for the run name (<dataset_name>_<scale>_<arch>)
+scale: 4x # used only for the run name
+hr_size: 192 # set to YOUR HR patch size (a multiple of 32)
+
+datasets:
+  train:
+    name: ${name}_train
+    dataroot: ./datasets/custom/train
+    datatype: img
+    batch_size: 16
+    num_workers: 4
+    use_shuffle: true
+    data_len: -1
+  val:
+    name: ${name}_val
+    dataroot: ./datasets/custom/val
+    datatype: img
+    data_len: 100

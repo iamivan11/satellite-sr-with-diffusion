@@ -1,0 +1,20 @@
+# @package _global_
+# WorldStrat, 6.6x SR  (LR 29x29 -> HR 192x192 patches)
+dataset_name: worldstrat
+scale: "6.6x"
+hr_size: 192 # HR patch size; drives model image_size & attn_res
+
+datasets:
+  train:
+    name: ${name}_train
+    dataroot: ./datasets/worldstrat/train
+    datatype: img
+    batch_size: 16
+    num_workers: 4
+    use_shuffle: true
+    data_len: -1
+  val:
+    name: ${name}_val
+    dataroot: ./datasets/worldstrat/val
+    datatype: img
+    data_len: 100
