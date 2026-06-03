@@ -6,7 +6,7 @@ conditional diffusion models. It compares the wavelet-domain Diffusion-Wavelet
 trained and evaluated on the WorldStrat and SEN2VENµS datasets across 6.6×, 4×,
 3×, and 2× scales. It also quantifies how training on synthetically degraded
 versus real low-resolution images affects reconstruction quality. Everything can
-be found in the [paper](report/main.pdf) that comes with the project.
+be found in the [paper](report.pdf) that comes with the project.
 
 ## Datasets
 
@@ -180,7 +180,7 @@ python inference.py data=sen2venus_4x model=wave \
 │   ├── match_lr_colors_to_hr.py   #   histogram-match LR colours to HR
 │   ├── rename_images.py           #   batch rename
 │   └── *_split.csv, worldstrat_config.json   # dataset splits + cloud labels
-├── report/main.pdf                # compiled project report (LaTeX sources are gitignored)
+├── report.pdf                     # compiled project report (LaTeX sources gitignored under report/)
 ├── pyproject.toml                 # dependencies + ruff/codespell config (uv-managed)
 └── uv.lock                        # pinned dependency lockfile
 ```

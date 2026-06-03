@@ -230,10 +230,9 @@ __marimo__/
 *.snm
 *.vrb
 
-# Report: commit only the built PDF, not the LaTeX sources
-report/chapters/
-report/figures/
-report/main.tex
+# Report: sources/build are local-only; the compiled PDF is committed at the
+# repo root as report.pdf
+/report/
 
 # Notebooks (sample/research artifacts)
 satellite_sr_with_diffusion/notebooks/
