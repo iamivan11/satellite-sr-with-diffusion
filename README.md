@@ -213,3 +213,19 @@ access — not just raw throughput — shaped the hardware choice for each stage
 | Local          | **MacBook Pro M3 (MPS)** | Development, debugging, small-scale runs |
 | Google Colab   | **NVIDIA Tesla T4**      | Mid-scale training and evaluation        |
 | BlueBEAR (HPC) | **NVIDIA A100 40 GB**    | Large-scale training of the final models |
+
+## Attribution
+
+This project is released under the MIT License and builds on the following
+open-source work (both Apache-2.0); their original authors retain their
+copyrights:
+
+- **DiWa** — B. B. Moser et al., _Waving Goodbye to Low-Res: A Diffusion-Wavelet
+  Approach for Image Super-Resolution_
+  ([code](https://github.com/Brian-Moser/diwa)). The wavelet-domain diffusion
+  model is adapted from this repository.
+- **SR3** — _Image Super-Resolution via Iterative Refinement_, the
+  implementation by Janspiry
+  ([code](https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement)),
+  based on Saharia et al. The pixel-space diffusion model and parts of the
+  training/evaluation scaffolding are adapted from this repository.
