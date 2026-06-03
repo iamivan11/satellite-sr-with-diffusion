@@ -5,7 +5,8 @@ conditional diffusion models. It compares the wavelet-domain Diffusion-Wavelet
 (DiWa) model against the pixel-space SR3 DDPM and interpolation baselines,
 trained and evaluated on the WorldStrat and SEN2VENµS datasets across 6.6×, 4×,
 3×, and 2× scales. It also quantifies how training on synthetically degraded
-versus real low-resolution images affects reconstruction quality.
+versus real low-resolution images affects reconstruction quality. Everything can
+be found in the [paper](report.pdf) that comes with the project.
 
 ## Datasets
 
@@ -24,10 +25,10 @@ versus real low-resolution images affects reconstruction quality.
     providing multi-spectral images at 10 m/pixel, temporally matched to the HR
     data.
 - **Split**: The official train/validation/test split provided by the dataset
-  creators is used.
-  - Train: 3103 (pairs)
-  - Val: 393 (pairs)
-  - Test (never touched): 394 (pairs)
+  creators is used (in pairs).
+  - Train: 3103 (80%)
+  - Val: 393 (10%)
+  - Test (never touched): 394 (10%)
 
 ### 2: SEN2VENµS
 
@@ -44,10 +45,10 @@ versus real low-resolution images affects reconstruction quality.
   - Low Resolution (LR): Sentinel‑2 surface reflectance at 10 m resolution.
 - **Split**: The dataset is organized by location; there is no standardized
   train/val/test split provided—users must define splits based on their
-  experimental needs.
-  - Train: 105,767 (pairs)
-  - Val: 13,220 (pairs)
-  - Test: 13,220 (pairs)
+  experimental needs (in pairs).
+  - Train: 105,767 (80%)
+  - Val: 13,220 (10%)
+  - Test: 13,220 (10%)
 
 ## Architectures
 
@@ -80,8 +81,7 @@ versus real low-resolution images affects reconstruction quality.
 
 ## Metrics
 
-Reconstructions are evaluated with five standard super-resolution metrics. Full
-formulas and variable definitions are in the [project report](report/main.pdf).
+Reconstructions are evaluated with five standard super-resolution metrics.
 
 | Metric    | Measures                                                       | Better |
 | --------- | -------------------------------------------------------------- | :----: |
@@ -180,7 +180,7 @@ python inference.py data=sen2venus_4x model=wave \
 │   ├── match_lr_colors_to_hr.py   #   histogram-match LR colours to HR
 │   ├── rename_images.py           #   batch rename
 │   └── *_split.csv, worldstrat_config.json   # dataset splits + cloud labels
-├── report/main.pdf                # compiled project report (LaTeX sources are gitignored)
+├── report.pdf                     # compiled project report (LaTeX sources gitignored under report/)
 ├── pyproject.toml                 # dependencies + ruff/codespell config (uv-managed)
 └── uv.lock                        # pinned dependency lockfile
 ```
@@ -213,3 +213,19 @@ access — not just raw throughput — shaped the hardware choice for each stage
 | Local          | **MacBook Pro M3 (MPS)** | Development, debugging, small-scale runs |
 | Google Colab   | **NVIDIA Tesla T4**      | Mid-scale training and evaluation        |
 | BlueBEAR (HPC) | **NVIDIA A100 40 GB**    | Large-scale training of the final models |
+
+## Attribution
+
+This project is released under the MIT License and builds on the following
+open-source work (both Apache-2.0); their original authors retain their
+copyrights:
+
+- **DiWa** — B. B. Moser et al., _Waving Goodbye to Low-Res: A Diffusion-Wavelet
+  Approach for Image Super-Resolution_
+  ([code](https://github.com/Brian-Moser/diwa)). The wavelet-domain diffusion
+  model is adapted from this repository.
+- **SR3** — _Image Super-Resolution via Iterative Refinement_, the
+  implementation by Janspiry
+  ([code](https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement)),
+  based on Saharia et al. The pixel-space diffusion model and parts of the
+  training/evaluation scaffolding are adapted from this repository.
